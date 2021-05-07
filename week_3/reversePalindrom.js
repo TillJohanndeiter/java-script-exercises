@@ -18,7 +18,7 @@ function getAllSubstrings(str) {
 }
 
 let text = "SJFUQPKMNPIYDWBENBYMGKOLPEDQGGTTJWLUPIYZTGABRKFBAZIKPLZAD"
-allSubstrings = getAllSubstrings(text)
+let allSubstrings = getAllSubstrings(text)
 
 for (const subStr of allSubstrings) {
     if (subStr === reverseStr(complementString(subStr))) {

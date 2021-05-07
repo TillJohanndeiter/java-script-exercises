@@ -4,7 +4,7 @@
 let WORDS = ['BYCKSTABFNIALAT', 'BUCHSTRBENSFLPT', 'BUCNSIHBENSALAT', 'BVIXZIREFNZALAY', 'BUGH-IRREMSRLAI',
     'BVIHSYABENZALRY', 'RYCHSTHEENSAIAT', 'BUIHZYABF-SACAI', 'RYGKS-ABFH-ALA-', 'BVGHSTPPENSR-AT']
 
-len = WORDS[0].length
+const LEN = WORDS[0].length
 
 function mostCommon(index) {
     const histogram = {};
@@ -28,7 +28,7 @@ function mostCommon(index) {
 }
 
 let solution = ""
-for (let i = 0; i < len; i++) {
+for (let i = 0; i < LEN; i++) {
     solution += mostCommon(i)
 }
 
