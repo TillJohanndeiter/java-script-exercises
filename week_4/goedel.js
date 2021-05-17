@@ -28,10 +28,10 @@ function isPrime(x) {
 
 }
 
-function firstNPrimes() {
+function firstNPrimes(n) {
     let primes = []
     let i = 2
-    while (primes.length <= 26) {
+    while (primes.length <= n) {
         if (isPrime(i)) {
             primes.push(BigInt(i))
         }
@@ -84,6 +84,6 @@ function primFactors(num) {
     return primFactors
 }
 
-const primes = firstNPrimes();
+const primes = firstNPrimes(26);
 
 console.log(primFactors(NUMBER, primes).map(primeFactor => numToChar(primeFactor.occurence)).join(''))
