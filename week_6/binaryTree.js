@@ -4,7 +4,7 @@ const LEFT = 'left'
 const RIGHT = 'right'
 const VALUE = 'value'
 
-const tree = {
+let tree = {
     "value": "+",
     "left": {
         "value": "/",
@@ -39,5 +39,8 @@ const evalNode = node => {
     }
 }
 
+if (tree instanceof String) {
+    tree = JSON.parse(tree)
+}
 
 console.log(evalNode(tree))
