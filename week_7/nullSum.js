@@ -1,8 +1,5 @@
 /* Find indices of longest sum in list equal to zero and calculate product of indices. */
 
-
-const product = (product, currentValue) => product * currentValue
-
 const longestSumEqualToZero = list => {
 
     let indices = [-1, -1]
