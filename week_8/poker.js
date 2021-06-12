@@ -1,3 +1,6 @@
+/* Calculate the most winning player in multiple poker sessions according to simplified rules. The product of the
+product of all games won by all players is printed. */
+
 const pairs = (hand, comparator) => {
     let listPairs = []
     for (let i = 0; i < hand.length; i++) {
