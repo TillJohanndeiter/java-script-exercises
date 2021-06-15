@@ -33,8 +33,6 @@ const rankToNumLookup = key => {
     } else {
         return Number(key)
     }
-
-
 }
 
 
@@ -43,7 +41,6 @@ function histogram(arr) {
     return arr.reduce((prev, curr) => (prev[curr] = ++prev[curr] || 1, prev), {})
 }
 
-const compCard = (card, otherCard) => card.Rank === otherCard.Rank && card.Suit === otherCard.Suit
 const compRank = (card, otherCard) => card.Rank === otherCard.Rank
 
 
@@ -51,16 +48,8 @@ const onePair = hand => pairs(hand, compRank).filter(pair => pair.length >= 2).l
 const twoPair = hand => pairs(hand, compRank).filter(pair => pair.length >= 2).length >= 2
 const threeOfKind = hand => pairs(hand, compRank).filter(pair => pair.length >= 3).length >= 1
 const straight = hand => {
-    let sortedHand = [...hand]
-    sortedHand.sort((card, otherCard) => rankToNumLookup(card.Rank) - rankToNumLookup(otherCard.Rank))
-
-    for (let i = 0; i < sortedHand.length - 1; i++) {
-        if (rankToNumLookup(sortedHand[i].Rank) !== rankToNumLookup(sortedHand[i + 1].Rank) - 1) {
-            return false
-        }
-    }
-
-    return true
+    hand.sort((card, otherCard) => rankToNumLookup(card.Rank) - rankToNumLookup(otherCard.Rank))
+    return hand.every((_, i) => i === hand.length - 1 || rankToNumLookup(hand[i].Rank) === rankToNumLookup(hand[i + 1].Rank) - 1)
 }
 const flush = hand => new Set(hand.map(card => card.Suit)).size === 1
 const fullHouse = hand => {
@@ -69,17 +58,13 @@ const fullHouse = hand => {
 }
 const fourOfKind = hand => Object.values(histogram(hand.map(card => card.Rank))).includes(4)
 const straightFlush = hand => straight(hand) && flush(hand)
-const royalFlush = hand => {
-    return hand.filter(card => [10, 'Jack', 'Queen', 'King', 'Ace'].includes(card.Rank)).length === 5
-        && new Set(hand.map(card => card.Suit)).size === 1
-}
+const royalFlush = hand => hand.filter(card => [10, 'Jack', 'Queen', 'King', 'Ace'].includes(card.Rank)).length === 5 && new Set(hand.map(card => card.Suit)).size === 1
+
 
 const combinationOrder = [onePair, twoPair, threeOfKind, straight, flush, fullHouse, fourOfKind, straightFlush, royalFlush]
 
 const highestPriority = hand => combinationOrder.indexOf(combinationOrder.filter(combination => combination(hand)).pop())
 
-
-let outcomes = []
 
 function calcPlayerToNumWin(game_list) {
     const playersToWin = {}
@@ -90,7 +75,6 @@ function calcPlayerToNumWin(game_list) {
         const players = Object.keys(game)
         for (const player of players) {
             playersToHighest[player] = highestPriority(game[player])
-            outcomes.push(highestPriority(game[player]))
         }
         // Source: https://stackoverflow.com/questions/27376295/getting-key-with-the-highest-value-from-object
         const winner = Object.keys(playersToHighest).reduce((a, b) => {
@@ -112,6 +96,4 @@ function calcPlayerToNumWin(game_list) {
 let fs = require('fs')
 let game_list = JSON.parse(fs.readFileSync('poker.json', 'utf8'))
 const playersToWin = calcPlayerToNumWin(game_list)
-let temp = histogram(outcomes)
-console.log(temp)
 console.log(Object.values(playersToWin).reduce(((previousValue, currentValue) => previousValue * currentValue), 1))
