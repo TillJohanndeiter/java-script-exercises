@@ -12,6 +12,18 @@ function histogram(arr) {
     return arr.reduce((prev, curr) => (prev[curr] = ++prev[curr] || 1, prev), {})
 }
 
+function sortGame(game) {
+    const players = Object.keys(game)
+    const sortedGame = {}
+
+    for (const player of players) {
+        sortedGame[player] = [...game[player]]
+        sortedGame[player].sort((card, otherCard) => rankToNumLookup(card.Rank) - rankToNumLookup(otherCard.Rank))
+    }
+
+    return sortedGame
+}
+
 
 const pairs = (hand, comparator) => {
     let listPairs = []
@@ -23,7 +35,7 @@ const pairs = (hand, comparator) => {
             }
         }
 
-        if (pair.length > 1 && listPairs.length === 0 || pair.every(card => listPairs.map(otherPair => !otherPair.includes(card)).every(v => v))) {
+        if (pair.length > 1 && (listPairs.length === 0 || pair.every(card => listPairs.map(otherPair => !otherPair.includes(card)).every(v => v)))) {
             listPairs.push(pair)
         }
     }
@@ -48,7 +60,7 @@ const rankToNumLookup = key => {
 }
 
 
-const conditionElseHighCard = (game, condition) => {
+const condition = (game, condition, alternative) => {
     let hasCondition = {}
     for (const player of Object.keys(game)) {
         let hand = game[player]
@@ -58,7 +70,7 @@ const conditionElseHighCard = (game, condition) => {
     if (histogram(Object.values(hasCondition))[true] === 1) {
         return argmax(hasCondition)
     } else if (histogram(Object.values(hasCondition))[true] >= 1) {
-        return highCard(game)
+        return alternative(game)
     } else {
         return undefined
     }
@@ -68,55 +80,109 @@ const conditionElseHighCard = (game, condition) => {
 const compRank = (card, otherCard) => card.Rank === otherCard.Rank
 
 const highCard = game => {
-    for (let i = 4; i >= 0; i--) {
-        let highestCard = {}
-        for (let player of Object.keys(game)) {
-            highestCard[player] = rankToNumLookup(game[player][4].Rank)
-        }
+    let highestCard = {}
+    for (let player of Object.keys(game)) {
+        highestCard[player] = Math.max(...game[player].map(card => rankToNumLookup(card.Rank)))
+    }
 
-        if (new Set(Object.values(highestCard)).size === Object.values(highestCard).length) {
-            return argmax(highestCard)
-        }
+    const playerWithHighestCard = argmax(highestCard)
+
+    if (histogram(Object.values(highestCard))[highestCard[playerWithHighestCard]] === 1) {
+        return argmax(highestCard)
     }
 
     return undefined
 }
 
+const lastCard = game => {
+    let highestLastCard = {}
 
-const highestPairElseHighCard = (game, minPairLength) => {
+    for (let player of Object.keys(game)) {
+        highestLastCard[player] = rankToNumLookup(game[player][4].Rank)
+    }
+
+    let player = argmax(highestLastCard)
+
+    if (histogram(Object.values(highestLastCard))[highestLastCard[player]] === 1) {
+        return player
+    } else {
+        return undefined
+    }
+}
+
+const highestPair = (game, minPairLength, alternative) => {
     let highestPair = {}
+    let numPairs = {}
     for (let player of Object.keys(game)) {
         let hand = game[player]
         let allPairs = pairs(hand, compRank).filter(pair => pair.length >= minPairLength)
         highestPair[player] = Math.max(...allPairs.map(pair => rankToNumLookup(pair[0].Rank)))
+        numPairs[player] = allPairs.length
+
     }
 
-    let playerWithMaxPair = argmax(highestPair)
 
-    if (highestPair[playerWithMaxPair] === -Infinity) {
+    highestPair = Object.fromEntries(Object.entries(highestPair)
+        .filter(([player, _]) => numPairs[player] >= 1))
+
+    if (Object.keys(highestPair).length === 0) {
         return undefined
     }
 
-    if (new Set(Object.values(highestPair)).size === Object.values(highestPair).length) {
+
+    let playerWithMaxPair = argmax(highestPair)
+
+
+    if (histogram(Object.values(highestPair))[highestPair[playerWithMaxPair]] === 1) {
         return playerWithMaxPair
     } else {
-        return highCard(game)
+        return alternative(game)
     }
 
 }
 
-const onePair = game => highestPairElseHighCard(game, 2)
-const twoPair = hand => pairs(hand, compRank).filter(pair => pair.length >= 2).length >= 2 // TODO: Ask
-const threeOfKind = game => highestPairElseHighCard(game, 3)
+const onePair = game => highestPair(game, 2, highCard)
+const twoPair = game => {
+    let highestPair = {}
+    let numPairs = {}
+    for (let player of Object.keys(game)) {
+        let hand = game[player]
+        let allPairs = pairs(hand, compRank).filter(pair => pair.length >= 2)
+
+        if (allPairs.length >= 2) {
+            highestPair[player] = allPairs[1][0].Rank
+            numPairs[player] = allPairs.length
+        }
+    }
+
+    highestPair = Object.fromEntries(Object.entries(highestPair)
+        .filter(([player, _]) => numPairs[player] >= 2))
+
+    if (Object.keys(highestPair).length === 0) {
+        return undefined
+    }
+
+    const playerWithMaxPair = argmax(highestPair)
+
+    if (histogram(Object.values(highestPair))[highestPair[playerWithMaxPair]] === 1) {
+        return playerWithMaxPair
+    } else {
+        return lastCard(game)
+    }
+
+}
+const threeOfKind = game => highestPair(game, 3, highCard)
 
 const straightCondition = hand => hand.every((_, i) => i === hand.length - 1 || rankToNumLookup(hand[i].Rank) === rankToNumLookup(hand[i + 1].Rank) - 1)
-const straight = game => conditionElseHighCard(game, straightCondition)
+const straight = game => {
+    let sortedGame = sortGame(game)
+    return condition(sortedGame, straightCondition, highCard)
+}
 
 const flushCondition = hand => new Set(hand.map(card => card.Suit)).size === 1
-const flush = game => conditionElseHighCard(game, flushCondition)
+const flush = game => condition(game, flushCondition, highCard)
 
 const fullHouse = game => {
-
     let playerToTupleRank = {}
     let playerToTripleRank = {}
 
@@ -128,30 +194,30 @@ const fullHouse = game => {
     }
 
     let playersWithFullHouse =
-        Object.keys(game).filter(player => playerToTupleRank[player] !== -Infinity && playerToTripleRank !== -Infinity)
+        Object.keys(game).filter(player => !(playerToTupleRank[player] === -Infinity || playerToTripleRank[player] === -Infinity))
 
     if (playersWithFullHouse.length === 0) {
         return undefined
     }
 
-    if (new Set(Object.values(playerToTripleRank)).size === Object.values(playerToTripleRank).length) {
+    const playerWithHighestTriple = argmax(playerToTripleRank)
+
+    if (histogram(Object.values(playerToTripleRank))[playerToTripleRank[playerWithHighestTriple]] === 1) {
         return argmax(playerToTripleRank)
     } else {
         return argmax(playerToTupleRank)
     }
 }
 
-const fourOfKind = hand => Object.values(histogram(hand.map(card => card.Rank))).includes(4) // TODO: Ask
-const straightFlush = playersToHand => conditionElseHighCard(playersToHand, hand => straightCondition(hand) && flushCondition(hand))
-const royalFlush = playersToHand => conditionElseHighCard(playersToHand, hand => hand.filter(card => [10, 'Jack', 'Queen', 'King', 'Ace'].includes(card.Rank)).length === 5 && new Set(hand.map(card => card.Suit)).size === 1)
+const fourOfKind = game => condition(game, hand => Object.values(histogram(Object.keys(hand))).includes(4), lastCard)
+const straightFlush = game => condition(game, hand => straightCondition(hand) && flushCondition(hand), highCard)
+const royalFlush = game => condition(game, hand => new Set(hand.map(card => card.Rank)) === new Set([10, 'Jack', 'Queen', 'King', 'Ace']) && new Set(hand.map(card => card.Suit)).size === 1, highCard)
 
 
-const combinationOrder = [highCard, onePair, threeOfKind, straight, flush, fullHouse, straightFlush, royalFlush]
+const combinationOrder = [highCard, onePair, twoPair, threeOfKind, straight, flush, fullHouse, fourOfKind, straightFlush, royalFlush]
 
 const winnerOfGame = game => {
-    let temp = combinationOrder.map(combination => combination(game))
-    let winner = combinationOrder.map(combination => combination(game)).filter(combination => combination !== undefined).pop()
-    return winner
+    return combinationOrder.map(combination => combination(game)).filter(winner => winner !== undefined).pop()
 }
 
 
@@ -160,12 +226,6 @@ function calcPlayerToNumWin(game_list) {
 
 
     for (let game of game_list) {
-        const playersToHighest = {}
-        const players = Object.keys(game)
-
-        for (const player of players) {
-            game[player].sort((card, otherCard) => rankToNumLookup(card.Rank) - rankToNumLookup(otherCard.Rank))
-        }
 
         const winner = winnerOfGame(game)
 
