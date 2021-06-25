@@ -44,13 +44,7 @@ const isVampire = n => {
         }
     }
 
-    let temp = vampireComb.length === 2
-
-    if (temp) {
-        console.log('asdsa')
-    }
-
-    return temp
+    return vampireComb.length === 2
 }
 
 
