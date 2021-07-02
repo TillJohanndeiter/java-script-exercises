@@ -1,3 +1,4 @@
+/*  Sum of all z of all z/n with z < n, n <= 1000 and gcd(z,n) == 1 */
 const LIMIT = 1001
 
 const sum = (accumulator, currentValue) => accumulator + currentValue[0]
